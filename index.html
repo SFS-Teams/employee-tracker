@@ -1,79 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Employee GPS Tracker</title>
+  <meta charset="UTF-8" />
+  <title>Employee Geo-Tracking</title>
   <style>
     body { font-family: Arial; padding: 20px; }
-    label, select, button { margin: 10px 0; display: block; }
-    #status { margin-top: 20px; font-size: 16px; color: green; }
+    label, select, button { display: block; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h2>📍 Employee GPS Tracker</h2>
+
+  <h2>Employee Location Tracker</h2>
 
   <label for="empSelect">Select Employee</label>
   <select id="empSelect"></select>
 
-  <button onclick="startTracking()">Start Tracking</button>
-
-  <p id="status">Waiting...</p>
+  <button onclick="submitLocation()">Submit Location</button>
 
   <script>
-    const endpoint = "PASTE_YOUR_SCRIPT_WEBAPP_URL_HERE";
-    let selectedEmployee = null;
-    let trackingStarted = false;
+    // Generate 90 employees: SFS900001 to SFS900090
+    const dropdown = document.getElementById("empSelect");
 
-    // Load employee list from Apps Script
-    fetch(endpoint)
-      .then(res => res.json())
-      .then(data => {
-        const dropdown = document.getElementById("empSelect");
-        data.forEach(emp => {
-          const option = document.createElement("option");
-          option.value = JSON.stringify({ id: emp.id, email: emp.email });
-          option.text = `${emp.name} (${emp.email})`;
-          dropdown.appendChild(option);
-        });
-      });
+    for (let i = 1; i <= 90; i++) {
+      const num = String(i).padStart(6, '0'); // 000001 to 000090
+      const empId = `SFS${900000 + i}`; // SFS900001 to SFS900090
+      const email = `emp${i}@example.com`; // Sample email
 
-    function startTracking() {
-      const emp = JSON.parse(document.getElementById("empSelect").value);
-      selectedEmployee = emp;
-      trackingStarted = true;
-      document.getElementById("status").innerText = "✅ Tracking started";
-
-      // First send immediately, then every 30 seconds
-      trackAndSend();
-      setInterval(trackAndSend, 30000);
+      const option = document.createElement("option");
+      option.value = JSON.stringify({ id: empId, email: email });
+      option.text = `${empId} (${email})`;
+      dropdown.appendChild(option);
     }
 
-    function trackAndSend() {
-      if (!trackingStarted) return;
+    function submitLocation() {
+      const selected = JSON.parse(document.getElementById("empSelect").value);
 
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          const { latitude, longitude } = pos.coords;
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
 
-          fetch(endpoint, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
+          // Send data to Apps Script endpoint
+          fetch('https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID/exec', {
+            method: 'POST',
             body: JSON.stringify({
-              id: selectedEmployee.id,
-              email: selectedEmployee.email,
-              lat: latitude,
-              lng: longitude
-            })
+              id: selected.id,
+              email: selected.email,
+              lat: lat,
+              lng: lng
+            }),
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(res => res.text())
+          .then(response => {
+            alert("Location Submitted: " + response);
           });
-
-          document.getElementById("status").innerText =
-            `📍 Sent location: ${latitude}, ${longitude}`;
-        },
-        err => {
-          document.getElementById("status").innerText = "❌ Location error: " + err.message;
-        }
-      );
+        }, () => {
+          alert("Geolocation failed.");
+        });
+      } else {
+        alert("Geolocation not supported.");
+      }
     }
   </script>
+
 </body>
 </html>
