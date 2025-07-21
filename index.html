@@ -12,40 +12,48 @@
 
   <h2>Employee Location Tracker</h2>
 
-  <label for="empSelect">Select Employee</label>
+  <label for="empSelect">Select Employee ID</label>
   <select id="empSelect"></select>
 
   <button onclick="submitLocation()">Submit Location</button>
 
   <script>
-    // Generate 90 employees: SFS900001 to SFS900090
-    const dropdown = document.getElementById("empSelect");
-
+    const employeeList = [];
     for (let i = 1; i <= 90; i++) {
-      const num = String(i).padStart(6, '0'); // 000001 to 000090
-      const empId = `SFS${900000 + i}`; // SFS900001 to SFS900090
-      const email = `emp${i}@example.com`; // Sample email
-
-      const option = document.createElement("option");
-      option.value = JSON.stringify({ id: empId, email: email });
-      option.text = `${empId} (${email})`;
-      dropdown.appendChild(option);
+      const num = String(i).padStart(6, '0'); // e.g., 000001
+      const empId = `SFS${num}`;              // SFS900001
+      const email = `emp${i}@example.com`;    // emp1@example.com
+      employeeList.push({ id: empId, email: email });
     }
 
+    const select = document.getElementById("empSelect");
+
+    employeeList.forEach(emp => {
+      const option = document.createElement("option");
+      option.value = emp.id;
+      option.text = emp.id; // Only show Employee ID in dropdown
+      select.appendChild(option);
+    });
+
     function submitLocation() {
-      const selected = JSON.parse(document.getElementById("empSelect").value);
+      const selectedId = document.getElementById("empSelect").value;
+      const selectedEmp = employeeList.find(emp => emp.id === selectedId);
+
+      if (!selectedEmp) {
+        alert("Invalid employee selected.");
+        return;
+      }
 
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
 
-          // Send data to Apps Script endpoint
           fetch('https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID/exec', {
             method: 'POST',
             body: JSON.stringify({
-              id: selected.id,
-              email: selected.email,
+              id: selectedEmp.id,
+              email: selectedEmp.email,
               lat: lat,
               lng: lng
             }),
