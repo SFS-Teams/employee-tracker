@@ -3,82 +3,76 @@
 <head>
   <title>Employee GPS Tracker</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
-    h2 { color: #2c3e50; }
+    body { font-family: Arial; padding: 20px; }
+    label, select, button { margin: 10px 0; display: block; }
     #status { margin-top: 20px; font-size: 16px; color: green; }
-    label { display: block; margin-top: 10px; }
-    input { padding: 5px; width: 100%; max-width: 300px; margin-bottom: 10px; }
-    button { padding: 8px 16px; font-size: 14px; }
   </style>
 </head>
 <body>
   <h2>📍 Employee GPS Tracker</h2>
 
-  <label for="empId">Employee ID</label>
-  <input type="text" id="empId" placeholder="e.g., SFS000000" />
-
-  <label for="empEmail">Employee Email</label>
-  <input type="email" id="empEmail" placeholder="e.g., you@example.com" />
+  <label for="empSelect">Select Employee</label>
+  <select id="empSelect"></select>
 
   <button onclick="startTracking()">Start Tracking</button>
 
-  <p id="status">Waiting for GPS signal...</p>
+  <p id="status">Waiting...</p>
 
   <script>
-    let employeeId = "";
-    let employeeEmail = "";
-    const endpoint = "https://script.google.com/macros/s/AKfycbzrPDm4DoAeZ1NqlElXfh6_W8paxfmCCH0E8qrOSGMyptbsWr-hi6z1YQK7qW_ARsESLQ/exec";
+    const endpoint = "PASTE_YOUR_SCRIPT_WEBAPP_URL_HERE";
+    let selectedEmployee = null;
+    let trackingStarted = false;
 
-    function sendLocation(lat, lng) {
-      fetch(endpoint, {
-        method: "POST",
-        mode: "no-cors",  // CORS bypass
-        body: JSON.stringify({ id: employeeId, email: employeeEmail, lat: lat, lng: lng }),
-        headers: { "Content-Type": "application/json" }
-      })
-      .then(() => {
-        document.getElementById("status").innerText = `✅ Sent location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      })
-      .catch(error => {
-        document.getElementById("status").innerText = "❌ Failed to send location.";
-        console.error("Error:", error);
+    // Load employee list from Apps Script
+    fetch(endpoint)
+      .then(res => res.json())
+      .then(data => {
+        const dropdown = document.getElementById("empSelect");
+        data.forEach(emp => {
+          const option = document.createElement("option");
+          option.value = JSON.stringify({ id: emp.id, email: emp.email });
+          option.text = `${emp.name} (${emp.email})`;
+          dropdown.appendChild(option);
+        });
       });
-    }
-
-    function trackLocation() {
-      if (!employeeId || !employeeEmail) {
-        document.getElementById("status").innerText = "❗ Enter ID and Email first.";
-        return;
-      }
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          position => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            sendLocation(lat, lng);
-          },
-          error => {
-            document.getElementById("status").innerText = "Error getting location: " + error.message;
-          }
-        );
-      } else {
-        document.getElementById("status").innerText = "Geolocation not supported.";
-      }
-    }
 
     function startTracking() {
-      employeeId = document.getElementById("empId").value.trim();
-      employeeEmail = document.getElementById("empEmail").value.trim();
+      const emp = JSON.parse(document.getElementById("empSelect").value);
+      selectedEmployee = emp;
+      trackingStarted = true;
+      document.getElementById("status").innerText = "✅ Tracking started";
 
-      if (!employeeId || !employeeEmail) {
-        alert("Please enter both Employee ID and Email.");
-        return;
-      }
+      // First send immediately, then every 30 seconds
+      trackAndSend();
+      setInterval(trackAndSend, 30000);
+    }
 
-      trackLocation(); // initial
-      setInterval(trackLocation, 30000); // every 30s
-      document.getElementById("status").innerText = "📡 Tracking started...";
+    function trackAndSend() {
+      if (!trackingStarted) return;
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const { latitude, longitude } = pos.coords;
+
+          fetch(endpoint, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: selectedEmployee.id,
+              email: selectedEmployee.email,
+              lat: latitude,
+              lng: longitude
+            })
+          });
+
+          document.getElementById("status").innerText =
+            `📍 Sent location: ${latitude}, ${longitude}`;
+        },
+        err => {
+          document.getElementById("status").innerText = "❌ Location error: " + err.message;
+        }
+      );
     }
   </script>
 </body>
