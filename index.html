@@ -2,50 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Employee Geo-Tracking</title>
+  <title>Employee Tracker</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    label, select, button { display: block; margin-top: 10px; }
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    label, select, button { margin-top: 10px; display: block; }
   </style>
 </head>
 <body>
 
-  <h2>Employee Location Tracker</h2>
+  <h2>Employee Live Tracker</h2>
 
   <label for="empSelect">Select Employee ID</label>
   <select id="empSelect"></select>
 
-  <button onclick="submitLocation()">Submit Location</button>
+  <button id="submitBtn" onclick="submitOnce()">Submit First Location</button>
+
+  <p id="status"></p>
 
   <script>
+    // ✅ 1. Employee List
     const employeeList = [];
     for (let i = 1; i <= 90; i++) {
-      const num = String(i).padStart(6, '0'); // e.g., 000001
-      const empId = `SFS${num}`;              // SFS900001
-      const email = `emp${i}@example.com`;    // emp1@example.com
+      const num = String(i).padStart(6, '0');
+      const empId = `SFS${num}`;
+      const email = `emp${i}@example.com`;
       employeeList.push({ id: empId, email: email });
     }
 
     const select = document.getElementById("empSelect");
-
     employeeList.forEach(emp => {
       const option = document.createElement("option");
       option.value = emp.id;
-      option.text = emp.id; // Only show Employee ID in dropdown
+      option.text = emp.id;
       select.appendChild(option);
     });
 
-    function submitLocation() {
-      const selectedId = document.getElementById("empSelect").value;
-      const selectedEmp = employeeList.find(emp => emp.id === selectedId);
+    let selectedEmp = null;
+
+    // ✅ 2. Submit once → then start tracking
+    function submitOnce() {
+      const selectedId = select.value;
+      selectedEmp = employeeList.find(emp => emp.id === selectedId);
 
       if (!selectedEmp) {
-        alert("Invalid employee selected.");
+        alert("Please select a valid employee.");
         return;
       }
 
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(position => {
+      document.getElementById("status").innerText = `Tracking started for ${selectedEmp.id}...`;
+
+      // First location submit
+      trackAndSend();
+
+      // Then run every 30 seconds
+      setInterval(trackAndSend, 30000);
+    }
+
+    // ✅ 3. Get geolocation and send to Google Apps Script
+    function trackAndSend() {
+      if (!navigator.geolocation) {
+        alert("Geolocation not supported.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        position => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
 
@@ -57,20 +78,16 @@
               lat: lat,
               lng: lng
             }),
-            headers: {
-              'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
           })
           .then(res => res.text())
-          .then(response => {
-            alert("Location Submitted: " + response);
-          });
-        }, () => {
-          alert("Geolocation failed.");
-        });
-      } else {
-        alert("Geolocation not supported.");
-      }
+          .then(msg => console.log("✅ Submitted:", msg))
+          .catch(err => console.error("❌ Error sending:", err));
+        },
+        error => {
+          console.warn("⚠️ Location error:", error.message);
+        }
+      );
     }
   </script>
 
