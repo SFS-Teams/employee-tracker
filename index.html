@@ -1,95 +1,62 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Employee Tracker</title>
+  <title>Employee GPS Tracker</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
-    label, select, button { margin-top: 10px; display: block; }
+    h2 { color: #2c3e50; }
+    #status { margin-top: 20px; font-size: 16px; color: green; }
   </style>
 </head>
 <body>
-
-  <h2>Employee Live Tracker</h2>
-
-  <label for="empSelect">Select Employee ID</label>
-  <select id="empSelect"></select>
-
-  <button id="submitBtn" onclick="submitOnce()">Submit First Location</button>
-
-  <p id="status"></p>
+  <h2>📍 Employee GPS Tracker</h2>
+  <p id="status">Waiting for GPS signal...</p>
 
   <script>
-    // ✅ 1. Employee List
-    const employeeList = [];
-    for (let i = 1; i <= 90; i++) {
-      const num = String(i).padStart(6, '0');
-      const empId = `SFS${num}`;
-      const email = `emp${i}@example.com`;
-      employeeList.push({ id: empId, email: email });
+    const employeeId = "SFS900259";
+    const employeeEmail = "sagarlakki86@gmail.com";
+    const endpoint = "https://script.google.com/macros/s/AKfycbzrPDm4DoAeZ1NqlElXfh6_W8paxfmCCH0E8qrOSGMyptbsWr-hi6z1YQK7qW_ARsESLQ/exec";
+
+    function sendLocation(lat, lng) {
+      fetch(endpoint, {
+  method: "POST",
+  mode: "no-cors",  // Prevents CORS errors
+  body: JSON.stringify({ id: employeeId, email: employeeEmail, lat: lat, lng: lng }),
+  headers: { "Content-Type": "application/json" }
+})
+
+      .then(response => response.text())
+      .then(text => {
+        document.getElementById("status").innerText = `✅ Sent location: ${lat}, ${lng}`;
+        console.log(text);
+      })
+      .catch(error => {
+        document.getElementById("status").innerText = "❌ Failed to send location.";
+        console.error("Error:", error);
+      });
     }
 
-    const select = document.getElementById("empSelect");
-    employeeList.forEach(emp => {
-      const option = document.createElement("option");
-      option.value = emp.id;
-      option.text = emp.id;
-      select.appendChild(option);
-    });
-
-    let selectedEmp = null;
-
-    // ✅ 2. Submit once → then start tracking
-    function submitOnce() {
-      const selectedId = select.value;
-      selectedEmp = employeeList.find(emp => emp.id === selectedId);
-
-      if (!selectedEmp) {
-        alert("Please select a valid employee.");
-        return;
+    function trackLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            sendLocation(lat, lng);
+          },
+          error => {
+            document.getElementById("status").innerText = "Error getting location: " + error.message;
+          }
+        );
+      } else {
+        document.getElementById("status").innerText = "Geolocation not supported.";
       }
-
-      document.getElementById("status").innerText = `Tracking started for ${selectedEmp.id}...`;
-
-      // First location submit
-      trackAndSend();
-
-      // Then run every 30 seconds
-      setInterval(trackAndSend, 30000);
     }
 
-    // ✅ 3. Get geolocation and send to Google Apps Script
-    function trackAndSend() {
-      if (!navigator.geolocation) {
-        alert("Geolocation not supported.");
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-
-          fetch('https://script.google.com/macros/s/AKfycbz3g43-CaYmZe0jb90vuWPBv73mXYUMGgF-kL9j-C3Q/dev', {
-            method: 'POST',
-            body: JSON.stringify({
-              id: selectedEmp.id,
-              email: selectedEmp.email,
-              lat: lat,
-              lng: lng
-            }),
-            headers: { 'Content-Type': 'application/json' }
-          })
-          .then(res => res.text())
-          .then(msg => console.log("✅ Submitted:", msg))
-          .catch(err => console.error("❌ Error sending:", err));
-        },
-        error => {
-          console.warn("⚠️ Location error:", error.message);
-        }
-      );
-    }
+    // Call once and then every 30 seconds
+    trackLocation();
+    setInterval(trackLocation, 30000);
   </script>
-
 </body>
 </html>
