@@ -1,62 +1,94 @@
-
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Employee GPS Tracker</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    h2 { color: #2c3e50; }
-    #status { margin-top: 20px; font-size: 16px; color: green; }
-  </style>
-</head>
-<body>
-  <h2>📍 Employee GPS Tracker</h2>
-  <p id="status">Waiting for GPS signal...</p>
+  <head>
+    <title>GPS Tracker with Google Login</title>
+    <meta name="google-signin-client_id" content="YOUR_CLIENT_ID.apps.googleusercontent.com">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+      body { font-family: Arial; padding: 20px; background: #f9f9f9; }
+      h2 { color: #2c3e50; }
+      #status { margin-top: 20px; font-size: 16px; color: green; }
+    </style>
+  </head>
+  <body>
+    <h2>📍 Employee GPS Tracker</h2>
 
-  <script>
-    let employeeId = "";
-  let employeeEmail = "";
-    const endpoint = "https://script.google.com/macros/s/AKfycbzrPDm4DoAeZ1NqlElXfh6_W8paxfmCCH0E8qrOSGMyptbsWr-hi6z1YQK7qW_ARsESLQ/exec";
+    <div id="g_id_onload"
+      data-client_id="YOUR_CLIENT_ID.apps.googleusercontent.com"
+      data-callback="handleCredentialResponse"
+      data-auto_prompt="false">
+    </div>
 
-    function sendLocation(lat, lng) {
-      fetch(endpoint, {
-  method: "POST",
-  mode: "no-cors",  // Prevents CORS errors
-  body: JSON.stringify({ id: employeeId, email: employeeEmail, lat: lat, lng: lng }),
-  headers: { "Content-Type": "application/json" }
-})
+    <div class="g_id_signin" data-type="standard"></div>
 
-      .then(response => response.text())
-      .then(text => {
-        document.getElementById("status").innerText = `✅ Sent location: ${lat}, ${lng}`;
-        console.log(text);
-      })
-      .catch(error => {
-        document.getElementById("status").innerText = "❌ Failed to send location.";
-        console.error("Error:", error);
-      });
-    }
+    <p id="empIdField" style="display:none;">
+      <label for="empId">Employee ID</label>
+      <input type="text" id="empId" placeholder="e.g., SFS900259" />
+      <button onclick="startTracking()">Start Tracking</button>
+    </p>
 
-    function trackLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          position => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            sendLocation(lat, lng);
-          },
-          error => {
-            document.getElementById("status").innerText = "Error getting location: " + error.message;
-          }
-        );
-      } else {
-        document.getElementById("status").innerText = "Geolocation not supported.";
+    <p id="status">Please sign in with Google to begin.</p>
+
+    <script>
+      let employeeEmail = "";
+      let employeeId = "";
+      const endpoint = "https://script.google.com/macros/s/AKfycbzrPDm4DoAeZ1NqlElXfh6_W8paxfmCCH0E8qrOSGMyptbsWr-hi6z1YQK7qW_ARsESLQ/exec";
+
+      function handleCredentialResponse(response) {
+        const idToken = response.credential;
+
+        // Decode the token to extract email
+        const payload = JSON.parse(atob(idToken.split('.')[1]));
+        employeeEmail = payload.email;
+
+        document.getElementById("status").innerText = `✅ Logged in as ${employeeEmail}`;
+        document.getElementById("empIdField").style.display = "block";
       }
-    }
 
-    // Call once and then every 30 seconds
-    trackLocation();
-    setInterval(trackLocation, 30000);
-  </script>
-</body>
+      function sendLocation(lat, lng) {
+        fetch(endpoint, {
+          method: "POST",
+          mode: "no-cors",
+          body: JSON.stringify({ id: employeeId, email: employeeEmail, lat: lat, lng: lng }),
+          headers: { "Content-Type": "application/json" }
+        }).then(() => {
+          document.getElementById("status").innerText = `✅ Sent location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        }).catch(error => {
+          document.getElementById("status").innerText = "❌ Failed to send location.";
+        });
+      }
+
+      function trackLocation() {
+        if (!employeeEmail || !employeeId) return;
+
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            pos => {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              sendLocation(lat, lng);
+            },
+            err => {
+              document.getElementById("status").innerText = "Location error: " + err.message;
+            }
+          );
+        } else {
+          document.getElementById("status").innerText = "Geolocation not supported.";
+        }
+      }
+
+      function startTracking() {
+        employeeId = document.getElementById("empId").value.trim();
+
+        if (!employeeId) {
+          alert("Please enter your Employee ID");
+          return;
+        }
+
+        trackLocation(); // First one
+        setInterval(trackLocation, 30000); // Every 30s
+        document.getElementById("status").innerText = "📡 Tracking started...";
+      }
+    </script>
+  </body>
 </html>
