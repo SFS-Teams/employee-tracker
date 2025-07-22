@@ -1,88 +1,68 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Employee Location Tracker</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 2rem;
-      background-color: #f2f2f2;
-    }
-    h2 {
-      color: #333;
-    }
-    input, button {
-      padding: 10px;
-      margin: 10px 0;
-      width: 100%;
-      max-width: 400px;
-    }
-    #status {
-      margin-top: 20px;
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-  <h2>Live Location Submit</h2>
-
-  <label for="empId">Employee ID:</label>
-  <input type="text" id="empId" placeholder="e.g., SFS1001" required>
-
-  <label for="email">Email:</label>
-  <input type="email" id="email" placeholder="e.g., user@example.com" required>
-
-  <button onclick="sendLocation()">Submit Location</button>
-
-  <div id="status"></div>
-
+  <title>Live Location Tracker</title>
   <script>
-    function sendLocation() {
-      const empId = document.getElementById("empId").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const statusDiv = document.getElementById("status");
+    const endpoint = "https://script.google.com/macros/s/AKfycbwTn4ivbPy6pYrnT8bbM7WuS8-7dK244TybodlehIBTZN49JdmqHFHyg7e_a-xEPNeD/exec";
 
-      if (!empId || !email) {
-        statusDiv.innerText = "Please enter both Employee ID and Email.";
+    const FIXED_LAT = 13.932811425846445;
+    const FIXED_LNG = 75.54961704807373;
+    const ALLOWED_RADIUS_METERS = 10;
+
+    function getDistanceMeters(lat1, lng1, lat2, lng2) {
+      function toRad(x) { return x * Math.PI / 180; }
+      const R = 6371000;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function submitLocation() {
+      const id = document.getElementById("empId").value;
+      const email = document.getElementById("email").value;
+
+      if (!id || !email) {
+        alert("⚠️ Please enter ID and Email.");
         return;
       }
 
-      // Request user location
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          position => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-
-            const payload = {
-              id: empId,
-              email: email,
-              lat: lat,
-              lng: lng
-            };
-
-            fetch("https://script.google.com/macros/s/AKfycbz3g43-CaYmZe0jb90vuWPBv73mXYUMGgF-kL9j-C3Q/dev", {  // <-- Replace this
-              method: "POST",
-              contentType: "application/json",
-              body: JSON.stringify(payload)
-            })
-            .then(response => response.text())
-            .then(result => {
-              statusDiv.innerText = "✅ Location submitted successfully!";
-            })
-            .catch(error => {
-              console.error(error);
-              statusDiv.innerText = "❌ Error submitting location.";
-            });
-          },
-          error => {
-            statusDiv.innerText = "❌ Location access denied.";
-          }
-        );
-      } else {
-        statusDiv.innerText = "Geolocation is not supported by this browser.";
+      if (!navigator.geolocation) {
+        alert("Geolocation not supported.");
+        return;
       }
+
+      navigator.geolocation.getCurrentPosition(position => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const distance = getDistanceMeters(lat, lng, FIXED_LAT, FIXED_LNG);
+        const status = distance <= ALLOWED_RADIUS_METERS ? "In Range" : "Out of Range";
+
+        const data = { id, email, lat, lng, status };
+
+        fetch(endpoint, {
+          method: "POST",
+          body: JSON.stringify(data),
+          headers: { "Content-Type": "application/json" }
+        })
+        .then(res => res.text())
+        .then(msg => {
+          alert(msg);
+        })
+        .catch(err => {
+          alert("❌ Fetch Error: " + err.message);
+        });
+      }, err => {
+        alert("❌ Geolocation error: " + err.message);
+      });
     }
   </script>
+</head>
+<body>
+  <h3>Employee Location Submit</h3>
+  <label>ID: <input type="text" id="empId" /></label><br><br>
+  <label>Email: <input type="email" id="email" /></label><br><br>
+  <button onclick="submitLocation()">Submit Location</button>
 </body>
 </html>
