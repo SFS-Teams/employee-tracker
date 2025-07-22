@@ -84,7 +84,7 @@
         status: distance <= ALLOWED_RADIUS_METERS ? "IN_RANGE" : "OUT_OF_RANGE"
       };
 
-      fetch(endpoint, {
+      fetch("https://script.google.com/macros/s/AKfycbxYLzb06KAN8acfrlVDiLdVC00i18-98RCCcFxjdD3Zg5Da1PzwBaTyztBiAtsyYpLwuw/exec", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -93,10 +93,10 @@
 })
 .then(response => response.text())
 .then(data => {
-  document.getElementById("status").innerText += "\nServer: " + data;
+  document.getElementById("status").innerText = "Server response: " + data;
 })
-.catch(err => {
-  document.getElementById("status").innerText = "Fetch error: " + err;
+.catch(error => {
+  document.getElementById("status").innerText = "Fetch error: " + error;
 });
 
       // Update status UI
