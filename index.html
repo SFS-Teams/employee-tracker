@@ -1,71 +1,88 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Employee Live GPS Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Location Tracker</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
+      padding: 2rem;
+      background-color: #f2f2f2;
     }
-    .status {
-      margin-top: 10px;
-      font-size: 16px;
+    h2 {
+      color: #333;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px 0;
+      width: 100%;
+      max-width: 400px;
+    }
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
+  <h2>Live Location Submit</h2>
 
-  <h2>📍 Live GPS Tracking</h2>
-  <p>Location is being sent every <strong>30 seconds</strong>.</p>
-  <div class="status" id="status">Initializing...</div>
+  <label for="empId">Employee ID:</label>
+  <input type="text" id="empId" placeholder="e.g., SFS1001" required>
+
+  <label for="email">Email:</label>
+  <input type="email" id="email" placeholder="e.g., user@example.com" required>
+
+  <button onclick="sendLocation()">Submit Location</button>
+
+  <div id="status"></div>
 
   <script>
-    const id = "SFS0001"; // Change this to dynamic ID if needed
-    const email = "employee@example.com"; // Replace with actual employee email
-    const scriptURL = "https://script.google.com/macros/s/AKfycbz3g43-CaYmZe0jb90vuWPBv73mXYUMGgF-kL9j-C3Q/dev"; // Replace with your deployed Apps Script URL
+    function sendLocation() {
+      const empId = document.getElementById("empId").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const statusDiv = document.getElementById("status");
 
-    async function sendLocation() {
-      if (!navigator.geolocation) {
-        document.getElementById("status").innerText = "❌ Geolocation not supported.";
+      if (!empId || !email) {
+        statusDiv.innerText = "Please enter both Employee ID and Email.";
         return;
       }
 
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+      // Request user location
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
 
-        const payload = {
-          id: id,
-          email: email,
-          lat: lat,
-          lng: lng
-        };
+            const payload = {
+              id: empId,
+              email: email,
+              lat: lat,
+              lng: lng
+            };
 
-        try {
-          await fetch(scriptURL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-
-          const now = new Date().toLocaleTimeString();
-          document.getElementById("status").innerText = `✅ Sent at ${now}: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-        } catch (err) {
-          document.getElementById("status").innerText = "❌ Failed to send location.";
-        }
-      }, () => {
-        document.getElementById("status").innerText = "❌ Unable to get location.";
-      });
+            fetch("YOUR_WEB_APP_URL", {  // <-- Replace this
+              method: "POST",
+              contentType: "application/json",
+              body: JSON.stringify(payload)
+            })
+            .then(response => response.text())
+            .then(result => {
+              statusDiv.innerText = "✅ Location submitted successfully!";
+            })
+            .catch(error => {
+              console.error(error);
+              statusDiv.innerText = "❌ Error submitting location.";
+            });
+          },
+          error => {
+            statusDiv.innerText = "❌ Location access denied.";
+          }
+        );
+      } else {
+        statusDiv.innerText = "Geolocation is not supported by this browser.";
+      }
     }
-
-    // Send location every 30 seconds
-    setInterval(sendLocation, 30000);
-    sendLocation(); // Send immediately on page load
-
-    // Optional: Refresh page every 5 minutes to prevent crashes or memory issues
-    setTimeout(() => location.reload(), 5 * 60 * 1000);
   </script>
-
 </body>
 </html>
