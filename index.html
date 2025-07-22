@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Employee GPS Tracker (with 10m check)</title>
+  <title>Employee GPS Tracker (No Location Restriction)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-  <h2>📍 Employee GPS Tracker (10m Zone)</h2>
+  <h2>📍 Employee GPS Tracker</h2>
 
   <label for="empId">Select Employee ID</label>
   <select id="empId">
@@ -26,32 +26,14 @@
   <script>
     const endpoint = "https://script.google.com/macros/s/AKfycbzrPDm4DoAeZ1NqlElXfh6_W8paxfmCCH0E8qrOSGMyptbsWr-hi6z1YQK7qW_ARsESLQ/exec";
 
-    // 🎯 Your fixed location coordinates (replace with your own)
-    const FIXED_LAT = 13.932824036434088;
-    const FIXED_LNG = 75.54962244033081;
-    const ALLOWED_RADIUS_METERS = 10;
-
     // Populate Employee ID dropdown
     const empIdSelect = document.getElementById("empId");
     for (let i = 0; i < 100; i++) {
-      const id = "SFS" + String(900000 + i).padStart(6, '0');
+      const id = "SFS" + String(900000 + i);
       const option = document.createElement("option");
       option.value = id;
       option.textContent = id;
       empIdSelect.appendChild(option);
-    }
-
-    // Distance calculation using Haversine Formula
-    function getDistanceMeters(lat1, lng1, lat2, lng2) {
-      function toRad(x) { return x * Math.PI / 180; }
-      const R = 6371000; // Radius of Earth in meters
-      const dLat = toRad(lat2 - lat1);
-      const dLng = toRad(lng2 - lng1);
-      const a = Math.sin(dLat/2)**2 +
-                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-                Math.sin(dLng/2)**2;
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
     }
 
     function sendLocation(lat, lng) {
@@ -60,14 +42,6 @@
 
       if (!employeeId || !employeeEmail) {
         document.getElementById("status").innerText = "⚠️ Please select ID and enter email.";
-        return;
-      }
-
-      const distance = getDistanceMeters(lat, lng, FIXED_LAT, FIXED_LNG);
-
-      if (distance > ALLOWED_RADIUS_METERS) {
-        document.getElementById("status").innerText =
-          `❌ Too far from location (${distance.toFixed(1)}m > 10m).`;
         return;
       }
 
@@ -81,7 +55,7 @@
       })
       .then(() => {
         document.getElementById("status").innerText =
-          `✅ Sent location (${distance.toFixed(1)}m from point).`;
+          `✅ Sent location: (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
       })
       .catch(error => {
         document.getElementById("status").innerText = "❌ Failed to send location.";
