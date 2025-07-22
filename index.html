@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Employee GPS Tracker (10m Zone)</title>
+  <title>Employee GPS Tracker (SUNRISE FACILITY SERVICE)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
@@ -26,7 +26,7 @@
   </style>
 </head>
 <body>
-  <h2>📍 Employee GPS Tracker (10m Zone)</h2>
+  <h2>📍 Employee GPS Tracker (SUNRISE FACILITY SERVICE)</h2>
 
   <label for="empId">Select Employee ID</label>
   <select id="empId">
@@ -42,7 +42,7 @@
     const endpoint = "https://script.google.com/macros/s/AKfycbzrPDm4DoAeZ1NqlElXfh6_W8paxfmCCH0E8qrOSGMyptbsWr-hi6z1YQK7qW_ARsESLQ/exec";
     const FIXED_LAT = 13.932811425846445;
     const FIXED_LNG = 75.54961704807373;
-    const ALLOWED_RADIUS_METERS = 10;
+    const ALLOWED_RADIUS_METERS = 30;
 
     // Populate Employee ID dropdown
     const empIdSelect = document.getElementById("empId");
@@ -94,7 +94,7 @@
       // Update status UI
       const statusText = payload.status === "IN_RANGE"
         ? `✅ Submitted (${distance.toFixed(1)}m from point).`
-        : `❌ OUT OF RANGE (${distance.toFixed(1)}m > 10m) - Admin Alert Sent`;
+        : `❌ OUT OF RANGE (${distance.toFixed(1)}m > 30m) - Admin Alert Sent`;
       document.getElementById("status").innerText = statusText;
     }
 
