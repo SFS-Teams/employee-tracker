@@ -39,7 +39,7 @@
   <p id="status">Waiting for location...</p>
 
   <script>
-    const endpoint = "https://script.google.com/macros/s/AKfycbxYLzb06KAN8acfrlVDiLdVC00i18-98RCCcFxjdD3Zg5Da1PzwBaTyztBiAtsyYpLwuw/exec";
+    const endpoint = "https://script.google.com/macros/s/AKfycbyzsZETj0-5E6S516TzJ58LCNrljKdMKKM3y9TBX-xmqD34cRiXF9OCzrTHF8ATJfxHGw/exec";
     const FIXED_LAT = 13.932811425846445;
     const FIXED_LNG = 75.54961704807373;
     const ALLOWED_RADIUS_METERS = 30;
@@ -84,7 +84,7 @@
         status: distance <= ALLOWED_RADIUS_METERS ? "IN_RANGE" : "OUT_OF_RANGE"
       };
 
-      fetch("https://script.google.com/macros/s/AKfycbxYLzb06KAN8acfrlVDiLdVC00i18-98RCCcFxjdD3Zg5Da1PzwBaTyztBiAtsyYpLwuw/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbyzsZETj0-5E6S516TzJ58LCNrljKdMKKM3y9TBX-xmqD34cRiXF9OCzrTHF8ATJfxHGw/exec", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
