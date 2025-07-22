@@ -4,10 +4,25 @@
   <title>Employee GPS Tracker (10m Zone)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-    h2 { color: #333; }
-    select, input { width: 100%; padding: 10px; margin: 10px 0; font-size: 16px; }
-    #status { margin-top: 15px; font-weight: bold; color: green; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h2 {
+      color: #333;
+    }
+    select, input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    #status {
+      margin-top: 15px;
+      font-weight: bold;
+      color: green;
+    }
   </style>
 </head>
 <body>
@@ -25,8 +40,6 @@
 
   <script>
     const endpoint = "https://script.google.com/macros/s/AKfycbzrPDm4DoAeZ1NqlElXfh6_W8paxfmCCH0E8qrOSGMyptbsWr-hi6z1YQK7qW_ARsESLQ/exec";
-
-    // 🎯 Fixed location coordinates
     const FIXED_LAT = 13.932811425846445;
     const FIXED_LNG = 75.54961704807373;
     const ALLOWED_RADIUS_METERS = 10;
@@ -41,23 +54,26 @@
       empIdSelect.appendChild(option);
     }
 
-    // Distance calculation using Haversine Formula
     function getDistanceMeters(lat1, lng1, lat2, lng2) {
       const toRad = x => x * Math.PI / 180;
       const R = 6371000;
       const dLat = toRad(lat2 - lat1);
       const dLng = toRad(lng2 - lng1);
-      const a = Math.sin(dLat/2) ** 2 +
+      const a = Math.sin(dLat / 2) ** 2 +
                 Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-                Math.sin(dLng/2) ** 2;
+                Math.sin(dLng / 2) ** 2;
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c;
     }
 
-    // Send Location to Google Apps Script
     function sendLocation(lat, lng, distance) {
       const employeeId = document.getElementById("empId").value;
       const employeeEmail = document.getElementById("email").value;
+
+      if (!employeeId || !employeeEmail) {
+        document.getElementById("status").innerText = "⚠️ Please select ID and enter email.";
+        return;
+      }
 
       const payload = {
         id: employeeId,
@@ -75,14 +91,11 @@
         headers: { "Content-Type": "application/json" }
       });
 
-      // Update UI
-      if (payload.status === "IN_RANGE") {
-        document.getElementById("status").innerText =
-          `✅ Submitted (${distance.toFixed(1)}m from point).`;
-      } else {
-        document.getElementById("status").innerText =
-          `❌ OUT OF RANGE (${distance.toFixed(1)}m > 10m) - Admin Alert Sent`;
-      }
+      // Update status UI
+      const statusText = payload.status === "IN_RANGE"
+        ? `✅ Submitted (${distance.toFixed(1)}m from point).`
+        : `❌ OUT OF RANGE (${distance.toFixed(1)}m > 10m) - Admin Alert Sent`;
+      document.getElementById("status").innerText = statusText;
     }
 
     function trackLocation() {
@@ -100,13 +113,7 @@
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             const distance = getDistanceMeters(lat, lng, FIXED_LAT, FIXED_LNG);
-
-            if (distance <= ALLOWED_RADIUS_METERS) {
-              sendLocation(lat, lng, distance); // allow submit
-            } else {
-              sendLocation(lat, lng, distance); // log and alert admin
-              // Do NOT submit to attendance if out of range
-            }
+            sendLocation(lat, lng, distance);
           },
           error => {
             document.getElementById("status").innerText =
